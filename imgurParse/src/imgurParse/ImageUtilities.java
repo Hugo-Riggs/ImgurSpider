@@ -1,4 +1,4 @@
-package imgurParseWin;
+package imgurParse;
 
 /*
  * JSwiff is an open source Java API for Macromedia Flash file generation
