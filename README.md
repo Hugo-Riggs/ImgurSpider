@@ -9,6 +9,7 @@ Description:
   
 Usage:
   java -jar [URL] [TAGS]
+  
 ex:
   java -jar imgur.com/r/wallpapers -qm
 
@@ -20,7 +21,7 @@ TAGS:
 cannot download gifs in quick mode so do not combine -qm with -gifs
 
 Example scrape:
-java -jar imgur.com/r/gifs -gifs -v
+  java -jar imgur.com/r/gifs -gifs -v
 
 Libraries used
   This java program uses jsoup library for web crawling, using various jsoup API instructions.
