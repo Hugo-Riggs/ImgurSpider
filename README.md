@@ -1,4 +1,4 @@
-# imgurDownloader
+# ImgurSpider
 
 ![imgurspider](https://cloud.githubusercontent.com/assets/8892714/14621246/717190d8-058f-11e6-852b-16ad18510ba2.png)
 
