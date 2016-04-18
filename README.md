@@ -7,22 +7,22 @@ Description:
   There is a command line .jar file and a GUI .jar file, and they are compiled
   and ready to run on a machine with java.
   
-Usage:
+Usage:<br>
   java -jar [URL] [TAGS]
   
-ex:
+ex:<br>
   java -jar imgur.com/r/wallpapers -qm
 
-URL:
+URL:<br>
   Any URL on the imgur.com domain which appears as (/r/"something"). This was built with reddit in mind.
 
-TAGS:
+TAGS:<br>
   -qm (quick mode only jpgs), -gifs (only gifs), -v (verbose)
 cannot download gifs in quick mode so do not combine -qm with -gifs
 
-Example scrape:
+Example scrape:<br>
   java -jar imgur.com/r/gifs -gifs -v
 
-Libraries used
+Libraries used<br>
   This java program uses jsoup library for web crawling, using various jsoup API instructions.
   Java standard libraries are used for data structures, and graphics.
