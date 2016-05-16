@@ -1,10 +1,7 @@
 package imgurParse;
 
-
-// imports for image graphics 
+// imports for image graphics
 import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -15,24 +12,19 @@ import java.awt.image.DirectColorModel;
 import java.awt.image.PixelGrabber;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-import java.io.ByteArrayOutputStream;
+/*import java.io.ByteArrayOutputStream;*/
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Scanner;
 
+// imports for Graphical User Interface
 import javax.imageio.ImageIO;
 import javax.swing.JCheckBox;
-// imports for Graphical User Interface
 import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-import javax.swing.UnsupportedLookAndFeelException;
 
 //imports for web scraping
 import org.jsoup.Jsoup;
@@ -47,11 +39,11 @@ class GUI extends JFrame {
 	
 	private javax.swing.JLabel URLlabel;
     private javax.swing.JTextField URL;
-    private javax.swing.JButton jButton1;
-    private JCheckBox check, check1;
+    private javax.swing.JButton startButton;
+    private JCheckBox check;
     ImgurSpider spider;
     
-	//Constructor:
+	// Constructor for GUI:
 	public GUI(ImgurSpider spider ) {
 		this.spider=spider;
 		initComponents();
@@ -62,19 +54,18 @@ class GUI extends JFrame {
 		setTitle("Imgur Spider");
 		setSize(300,150);
 		setLocation(10,200);
-		
+
 		addWindowListener(new WindowAdapter(){
 			public void windowClosing(WindowEvent e) {
 				System.exit(0);
 			}
 		});
-		
-		
+
 		this.setLayout(null);
 		
 		URLlabel = new javax.swing.JLabel();
 		URL = new javax.swing.JTextField();
-		jButton1 = new javax.swing.JButton();
+		startButton = new javax.swing.JButton();
 		
 		URLlabel.setText("URL: (example: http://imgur.com/r/wallpapers)");
 		URLlabel.setBounds(4, 4, 300, 20);
@@ -85,28 +76,26 @@ class GUI extends JFrame {
 		check = new JCheckBox("source are GIFs");
 		check.setBounds(165,20,165,20);
 		
-		jButton1.setText("Start");
-		jButton1.setBounds(4,40,80,30);
+		startButton.setText("Start");
+		startButton.setBounds(4,40,80,30);
 		
-		jButton1.addActionListener( new ActionListener() {
-			public void actionPerformed(ActionEvent evt) {
-				try {
-					jButton1ActionPerformed(evt);
+		startButton.addActionListener( evt ->  {
+			try {
+					startButtonActionPerformed(evt);
 				} catch (IOException | InterruptedException e) {
 					e.printStackTrace();
 				}
-			}
-		});
+			});
 		
         
         add(URL);
         add(URLlabel);
-        add(jButton1);
+        add(startButton);
         add(check);
         this.setVisible(true);
 	}
 	
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) throws IOException, InterruptedException {
+    private void startButtonActionPerformed(java.awt.event.ActionEvent evt) throws IOException, InterruptedException {
     	String url=URL.getText();
     	String[] args = {url, "", "", ""};
     	if(check.isSelected())
@@ -118,53 +107,61 @@ class GUI extends JFrame {
 	
 }// end GUI class
 
-
-			
-			
 /////////////////////////////
-//// Parse a imgur page for its images
-////
-////
-
+//// ImgurSpider class
+//	helpful links
 //	http://jsoup.org/cookbook/
 //	http://jsoup.org/apidocs/
 
-	class ImgurSpider implements Runnable {
+class ImgurSpider implements Runnable {
 	
-   private Thread t;
-   private String threadName;
+    private Thread t;
+    private String threadName;
+	private static ImgurSpider spider;
 
-   
-   // Jsoup variables
-   static Document doc;
-   static Document tempDoc;
-   static Element content;
-   static Elements links;
-   
-   static String dirName;
-   static String localReference;
-   
-   
-	// Global scrape variables
-	static int g_imgSv=0;
-	private static int g_strtpg=0;
-	static int g_pageLimit=50;
-	static boolean g_prints=false;
-	static boolean g_quickMode = true;
-	static boolean g_gifs=false;
-	static String g_saveTo="";
-	static String g_article="";
-	static String g_htmlChunk="";
-	static String[] args;
-	// Graphics constants
-	private static final int[] RGB_MASKS = {0xFF0000, 0xFF00, 0xFF};
-	private static final ColorModel RGB_OPAQUE =
-	new DirectColorModel(32, RGB_MASKS[0], RGB_MASKS[1], RGB_MASKS[2]);
-	
-	public ImgurSpider(String threadName) {
+    // Jsoup variables
+    static Document doc;
+    static Document tempDoc;
+    static Element content;
+    static Elements links;
+
+    static String dirName;
+    static String localReference;
+
+    // Global scrape variables
+    static int g_imgSv=0;
+    private static int g_strtpg=0;
+    static int g_pageLimit=50;
+    static boolean g_prints=true;
+    static boolean g_quickMode = true;
+    static boolean g_gifs=false;
+    static String g_saveTo="";
+    static String g_article="";
+    static String g_htmlChunk="";
+    static String[] args;
+
+    // Graphics constants
+    private static final int[] RGB_MASKS = {0xFF0000, 0xFF00, 0xFF};
+    private static final ColorModel RGB_OPAQUE =
+    new DirectColorModel(32, RGB_MASKS[0], RGB_MASKS[1], RGB_MASKS[2]);
+
+
+	public static ImgurSpider getInstance(String n){
+		if(spider == null){
+			spider = new ImgurSpider(n);
+		}
+
+		return spider;
+	}
+
+
+	private ImgurSpider(String threadName) {
 		this.threadName=threadName;
 	}
 
+	private ImgurSpider() {
+        System.out.println("Thread name not set"); // Place this command in a thread message eventually.
+	}
 
 	// Return the i-th word of a String.
 	   public static String ithWord(String s, int i) {
@@ -186,8 +183,8 @@ class GUI extends JFrame {
 		   return "";
 		   }
 	   }	
-	   
-	   
+
+/*
 	   public static byte[] returnBytes(BufferedImage image){
 		   byte[] imageInByte = null;
 		   try{
@@ -200,10 +197,11 @@ class GUI extends JFrame {
 			}catch(IOException e){
 				System.out.println(e.getMessage());
 			}		
-		   
+
 		   return imageInByte;
 	   }
-	   
+	  */
+/*
 	 	// This is important for creating directories in windows or unix 
 		public static String addSlashes(String str){
 			for(int itr=0;itr<str.length();itr++){
@@ -212,7 +210,7 @@ class GUI extends JFrame {
 			}
 			return str;
 		}
-		
+	*/
 		// Print that we are attempting to connecto to a URL.
 		// Continue to try every 5 seconds until a connection is made.
 		private static Document htmlGrab() throws IOException, InterruptedException {
@@ -233,18 +231,19 @@ class GUI extends JFrame {
 		}
 	
 		
-		
 		// Process initial user input
 		private static void readArgs(String[] args) throws IOException, InterruptedException {
-			while(true){
-			if(args.length==0){
+
+			while(true){ // While they have not entered a necessary argument.
+			if(args.length==0){ // No argument print a helpful message
 				printHelp();
 				System.exit(0);
 			}
 			else 
 				break;
 			}
-			for(int i=0;i<args.length;i++){
+
+			for(int i=0;i<args.length;i++){ // Read the arguments for setting program flags
 				switch(args[i]){
 					case "-qm":
 						g_quickMode=true;
@@ -257,6 +256,7 @@ class GUI extends JFrame {
 						break;
 				}
 			}
+
 			if(args.length!=0){for(int i = 0; i < args.length; i++){if(args[i].contains("http:"))g_article=args[i];}}
 			if(g_article.contains("http")){}else if (!g_article.contains("http")){g_article="http://"+g_article;}
 			
@@ -298,13 +298,14 @@ class GUI extends JFrame {
 			g_htmlChunk = g_htmlChunk.substring(0,g_htmlChunk.indexOf('"'));
 			return g_htmlChunk;
 		}
-		
 
-
-
-	//private static void runScrape(String dirName, Elements links, Element content, Document doc, Document tempdoc) throws IOException, InterruptedException {
-	// The lengthy scrape code which parses the imgur html server text for image files, and downloads them
+	// When the thread is created this method runs first.
+	// Create a loop which breaks on thread interupt.
+	// A thread interrupt is triggered by the user when they
+	// close the Swing window.
 	public void run(){
+
+		// The image scraping continues while the thread has not been interrupted.
         while (!Thread.currentThread().isInterrupted()) {
         	
             try {
@@ -316,45 +317,47 @@ class GUI extends JFrame {
 			int repeatCntr=0;
 			int linksFound=0;
 			String linkHref = "";
-			ArrayList<String> names = new ArrayList<String>();
+			ArrayList<String> names = new ArrayList<>();
+
+			// Always try this next loop.
 			while(true){
+				//
 				if(Thread.currentThread().isInterrupted()) {
 			        System.out.println("Thread interrupted\n Exiting...");
 			        break;
 			    }
+
 				if(g_strtpg!=0){
 					while(doc==tempDoc){
 						try{
-								doc = Jsoup.connect("https://imgur.com"+g_htmlChunk+"/page/"+g_strtpg+"/hit?scrolled").get();
-								// print url 
-								System.out.println("https://imgur.com"+g_htmlChunk+"/page/"+g_strtpg+"/hit?scrolled");
-								Thread.sleep(5000);
+                            doc = Jsoup.connect("https://imgur.com"+g_htmlChunk+"/page/"+g_strtpg+"/hit?scrolled").get();
+                            // print url
+                            System.out.println("https://imgur.com"+g_htmlChunk+"/page/"+g_strtpg+"/hit?scrolled");
+                            Thread.sleep(5000);
 						} catch(java.net.SocketTimeoutException e) {
 							System.out.println(e);
 						}
-						catch(org.jsoup.HttpStatusException me){
-							System.out.println(me);
+						catch(org.jsoup.HttpStatusException e){
+                            e.printStackTrace();
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+                            e.printStackTrace();
 						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-					content = doc.body();
-					links = content.getElementsByTag("a");
-					g_strtpg++;
-					repeatCntr++;
-					if(repeatCntr>5){break;}
+
+                        content = doc.body();
+                        links = content.getElementsByTag("a");
+                        g_strtpg++;
+                        repeatCntr++;
+                        if(repeatCntr>5){break;}
 					}
 				}else{g_strtpg++;}
-			//	boolean outOfFor=false;
+
+				// 	Go through links we found in the HTML
 				for (Element link : links) {
 					try{
 					 linkHref = link.attr("href");
-					 //if(linkHref.equals("/")||linkHref.equals("javascript:;")){System.out.println("broken image");outOfFor=true;break;}if(outOfFor)break;
-					 //System.out.println("for looped " + linkHref);
-					 if(!names.contains(linkHref)&&!linkHref.contains("javascript")&&doc!=tempDoc){
+                     if(!names.contains(linkHref)&&!linkHref.contains("javascript")&&doc!=tempDoc){
 						 names.add(linkHref);
 						 String imgName = linkHref.substring(linkHref.indexOf("m/")+2, linkHref.length());
 					      if(g_prints)System.out.println("Image name " + imgName);
@@ -365,10 +368,9 @@ class GUI extends JFrame {
 					      imgName = imgName.substring(imgName.indexOf('/')+1, imgName.length() );
 					      imgName = imgName.substring(imgName.indexOf('/')+1, imgName.length());
 
-					      // LOCAL GLOBAL VARIABLES
-					      String tmp="";
-					      int fork;
-					    {
+					      String tmp=""; // tmp -> used to hold a to string value of the images Elements variable.
+					      int isGIF; //This case covers when the image is a .GIF
+
 						 Element body = null;
 						 Elements images=null;
 						 
@@ -389,26 +391,26 @@ class GUI extends JFrame {
 								 images = body.getElementsByTag("img");
 							 }
 						 }
-						 fork = 0;//This case covers when the image is a .GIF
-						 if(images!=null && images.toString().length()==0){
-							 fork=1;
+						 isGIF = 0;//This case covers when the image is a .GIF
+                         if(images!=null && images.toString().length()==0){	// From html, determines that the image is a .jpeg
+							 isGIF=1;
 							 if(body!=null){
-								 images = body.getElementsByTag("script");	
+								 images = body.getElementsByTag("script");
 							 }
 						 }
 					      if(!(images==null))
 						 	tmp=images.toString();
-					      }
+
 					      String dlLink = tmp;
-						 if(dlLink.toString().length()==0){break;}
-						 if(fork==0){
+						 if(dlLink.length()==0){break;}
+						 if(isGIF==0){
 							 if(g_prints){	System.out.println("\nstep 1 " + dlLink);	}
 							 dlLink = dlLink.substring(dlLink.indexOf('"')+3, dlLink.length());
 							 if(g_prints){	System.out.println("\nstep 2 " +dlLink+"\n");	}
 							 if(!g_quickMode){dlLink = "https://"+dlLink.substring(2, dlLink.indexOf('"'));}
 							 else {dlLink = "https://"+dlLink.substring(dlLink.indexOf('"')+3, dlLink.lastIndexOf('"'));
 							 dlLink = dlLink.substring(0, dlLink.indexOf("b."))+dlLink.substring(dlLink.indexOf("b.")+1, dlLink.length());}
-						 }else if(fork==1){
+						 }else if(isGIF==1){
 							 if(g_prints){	System.out.println("\nstep 1 " + dlLink+"\n");	}
 							 dlLink = dlLink.substring(dlLink.indexOf("//")+2,dlLink.length());
 							 if(g_prints){	System.out.println("\nstep 2 " +dlLink+"\n");	}
@@ -417,7 +419,7 @@ class GUI extends JFrame {
 						 // Create the image object
 						 Image image;
 						 //Image image = null;
-							try{
+                        try{
 								if(dlLink.contains("?1")){dlLink=dlLink.substring(0,dlLink.indexOf("?1"));}
 								 String ext="";
 								 if(!g_quickMode){
@@ -483,10 +485,10 @@ class GUI extends JFrame {
 					    	  System.out.println("https://imgur.com"+g_htmlChunk+"/page/"+g_strtpg+"/hit?scrolled");
 					      }//end if for empty image string
 					 }//end if (!names.contains(linkHref)&&!linkHref.contains("javascript")&&doc!=tempdoc)
-			} catch (Exception e) {
+                } catch (Exception e) {
 					  if(g_prints)System.out.println(e);
 					}
-				} // END FOR loop
+				} // END FOR loop, (which looks at individual links on the page)
 
 				tempDoc=doc;
 				if(g_strtpg>g_pageLimit&&g_pageLimit!=0)
@@ -502,32 +504,37 @@ class GUI extends JFrame {
 	
 	}
 
-	
-	   public void start (String[] args) throws IOException, InterruptedException
-	   {
-		   this.args = args;
-	      System.out.println("Starting " +  threadName );
-	      if (t == null)
-	      {
-	         t = new Thread (this, threadName);
-	         t.start ();
-	      }
-	   }
+	// The arguments string is set when the thread starts.
+	// See if it is still possible to call this code through the main code.
+   public void start (String[] args) throws IOException, InterruptedException
+   {
+	  if(args==null)
+		  printHelp();
+       this.args = args;
+      System.out.println("Starting " +  threadName );
+      if (t == null)
+      {
+         t = new Thread (this, threadName);
+         t.start ();
+      }
+   }
 
-
-	
 }
-	
+
+
 class test{
 
 	
 	public static void main(String args[]) throws IOException, InterruptedException  {
 		
+		// The ImgurSpider object is a Singleton.
+		ImgurSpider spider;
+		spider = ImgurSpider.getInstance("Imgur Spider");
 
-		ImgurSpider spider = new ImgurSpider("spider");
+		// Pass the spider object into the graphical user interface.
+		//final GUI gui = new GUI(spider);
 
-		final GUI gui = new GUI(spider); 
-
+		spider.start(args);
 	}
 	
 	
