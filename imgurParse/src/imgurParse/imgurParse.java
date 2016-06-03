@@ -34,14 +34,13 @@ import org.jsoup.select.Elements;
 
 class GUI extends JFrame {
 	
-   private Thread t;
-   private String threadName;
-	
-	private javax.swing.JLabel URLlabel;
+    private Thread t;
+    private String threadName;
+
     private javax.swing.JTextField URL;
-    private javax.swing.JButton startButton;
+
     private JCheckBox check;
-    ImgurSpider spider;
+    private ImgurSpider spider;
     
 	// Constructor for GUI:
 	public GUI(ImgurSpider spider ) {
@@ -49,7 +48,6 @@ class GUI extends JFrame {
 		initComponents();
 	}
 	
-
 	private void initComponents(){
 		setTitle("Imgur Spider");
 		setSize(300,150);
@@ -62,11 +60,12 @@ class GUI extends JFrame {
 		});
 
 		this.setLayout(null);
-		
-		URLlabel = new javax.swing.JLabel();
+        javax.swing.JLabel URLlabel = new javax.swing.JLabel();	 // initialize a label
+
 		URL = new javax.swing.JTextField();
-		startButton = new javax.swing.JButton();
-		
+
+		javax.swing.JButton startButton = new javax.swing.JButton(); // initialize a button
+
 		URLlabel.setText("URL: (example: http://imgur.com/r/wallpapers)");
 		URLlabel.setBounds(4, 4, 300, 20);
 		
@@ -103,8 +102,6 @@ class GUI extends JFrame {
     	spider.start(args);
 	}
     
-    
-	
 }// end GUI class
 
 /////////////////////////////
@@ -120,25 +117,21 @@ class ImgurSpider implements Runnable {
 	private static ImgurSpider spider;
 
     // Jsoup variables
-    static Document doc;
-    static Document tempDoc;
-    static Element content;
-    static Elements links;
+    private static Document doc;
+    private static Document tempDoc;
+    private static Element content;
+    private static Elements links;
 
-    static String dirName;
-    static String localReference;
+    private static String dirName;
 
-    // Global scrape variables
-    static int g_imgSv=0;
+     // Global object variables
     private static int g_strtpg=0;
-    static int g_pageLimit=50;
-    static boolean g_prints=true;
-    static boolean g_quickMode = true;
-    static boolean g_gifs=false;
-    static String g_saveTo="";
-    static String g_article="";
-    static String g_htmlChunk="";
-    static String[] args;
+    private static boolean g_prints=true;
+    private static boolean g_quickMode = true;
+    private static boolean g_gifs=false;
+    private static String g_article="";
+    private static String g_htmlChunk="";
+    private static String[] args;
 
     // Graphics constants
     private static final int[] RGB_MASKS = {0xFF0000, 0xFF00, 0xFF};
@@ -258,7 +251,7 @@ class ImgurSpider implements Runnable {
 			}
 
 			if(args.length!=0){for(int i = 0; i < args.length; i++){if(args[i].contains("http:"))g_article=args[i];}}
-			if(g_article.contains("http")){}else if (!g_article.contains("http")){g_article="http://"+g_article;}
+			if (!g_article.contains("http")){g_article="http://"+g_article;}
 			
 			doc = htmlGrab();
 			if(g_prints)System.out.println(doc.title());
@@ -270,7 +263,7 @@ class ImgurSpider implements Runnable {
 			links = content.getElementsByTag("a");
 			
 			// Grab HTML DIV tag which holds image URL
-			localReference = selectURL(doc);
+			String localReference = selectURL(doc);
 			
 			//Establish connection with the image server , create a swap connection
 			tempDoc = Jsoup.connect("https://imgur.com"+localReference+"/page/"+g_strtpg+"/hit?scrolled").get();
@@ -452,13 +445,15 @@ class ImgurSpider implements Runnable {
 									DataBuffer buffer = new DataBufferInt((int[]) pg.getPixels(), pg.getWidth() * pg.getHeight());
 									WritableRaster raster = Raster.createPackedRaster(buffer, width, height, width, RGB_MASKS, null);
 									BufferedImage bi = new BufferedImage(RGB_OPAQUE, raster, false, null);
-									String path="";    
-							      if(g_imgSv==0){
-							    	  path = ImgurSpider.class.getClassLoader().getResource(".").getPath();
-							      }
-							      else if(g_imgSv==1){ 
-							    	  path = g_saveTo; 
-							      }
+									String path="";
+                                    int g_imgSv=0;// TODO: this could be if, g_saveTo is not null save it there. To get rid of this var
+									String g_saveTo="";// TODO: add a method to get this location, or prompt
+                                    if(g_imgSv==0){
+                                        path = ImgurSpider.class.getClassLoader().getResource(".").getPath();
+                                    }
+                                    else if(g_imgSv==1){
+                                        path = g_saveTo;
+                                    }
 							      if(g_prints)System.out.println("Image name " + imgName);
 							      if(!imgName.equals("")){
 								      // If this is the first image create the path for the images
@@ -491,8 +486,10 @@ class ImgurSpider implements Runnable {
 				} // END FOR loop, (which looks at individual links on the page)
 
 				tempDoc=doc;
+
+				int g_pageLimit=50;// to local
 				if(g_strtpg>g_pageLimit&&g_pageLimit!=0)
-				{ 
+				{
 					System.out.println("Stopped because current page number " + g_strtpg + " is > limit: " + g_pageLimit);
 					break;
 				}
@@ -510,12 +507,12 @@ class ImgurSpider implements Runnable {
    {
 	  if(args==null)
 		  printHelp();
-       this.args = args;
+      this.args = args;
       System.out.println("Starting " +  threadName );
       if (t == null)
       {
-         t = new Thread (this, threadName);
-         t.start ();
+        t = new Thread (this, threadName);
+        t.start ();
       }
    }
 
@@ -531,10 +528,9 @@ class test{
 		ImgurSpider spider;
 		spider = ImgurSpider.getInstance("Imgur Spider");
 
-		// Pass the spider object into the graphical user interface.
-		//final GUI gui = new GUI(spider);
+		final GUI gui = new GUI(spider);	// Pass the spider object into the graphical user interface.
 
-		spider.start(args);
+//		spider.start(args);  // non GUI version
 	}
 	
 	
