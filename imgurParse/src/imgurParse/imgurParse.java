@@ -1,3 +1,10 @@
+/*
+* Hugo Riggs
+* This java program can be used to download images off of the
+* imgur dot com / r / name
+* domain. (Where name can be any existing directory).
+*
+ */
 package imgurParse;
 
 // imports for image graphics
@@ -13,12 +20,11 @@ import java.awt.image.PixelGrabber;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 /*import java.io.ByteArrayOutputStream;*/
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 // imports for Graphical User Interface
@@ -32,6 +38,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+// Add a graphical user interface for easier use by the end user.
+// This JFrame class is used to create a window.
 class GUI extends JFrame {
 	
     private Thread t;
@@ -121,6 +129,7 @@ class ImgurSpider implements Runnable {
     private static Document tempDoc;
     private static Element content;
     private static Elements links;
+	private static Elements linkName;//Adding this new line for getting image names
 
     private static String dirName;
 
@@ -138,7 +147,7 @@ class ImgurSpider implements Runnable {
     private static final ColorModel RGB_OPAQUE =
     new DirectColorModel(32, RGB_MASKS[0], RGB_MASKS[1], RGB_MASKS[2]);
 
-
+	// Our spider is a Singleton.
 	public static ImgurSpider getInstance(String n){
 		if(spider == null){
 			spider = new ImgurSpider(n);
@@ -157,25 +166,25 @@ class ImgurSpider implements Runnable {
 	}
 
 	// Return the i-th word of a String.
-	   public static String ithWord(String s, int i) {
-		   try {
-			   String tmp = s;
-			   String ithword = "";
-		   for (int j = 0; j < i; j++) {
-		         if (tmp.indexOf(" ") == -1)
-		            ithword = tmp.substring(0, tmp.length());
-		         else {
-		            ithword = tmp.substring(0, tmp.indexOf(" "));
-		            tmp = tmp.substring(tmp.indexOf(" ")+1, tmp.length());
-		         }
-		      }
-		   return ithword;
-	   }
-	   catch (Exception e) {
-		   System.out.println("Invalid string: "+s);
-		   return "";
-		   }
-	   }	
+   public static String ithWord(String s, int i) {// why not leave this as public, otherwise it could be put in a separate utility class.
+       try {
+           String tmp = s;
+           String ithword = "";
+       for (int j = 0; j < i; j++) {
+             if (tmp.indexOf(" ") == -1)
+                ithword = tmp.substring(0, tmp.length());
+             else {
+                ithword = tmp.substring(0, tmp.indexOf(" "));
+                tmp = tmp.substring(tmp.indexOf(" ")+1, tmp.length());
+             }
+          }
+       return ithword;
+   }
+   catch (Exception e) {
+       System.out.println("Invalid string: "+s);
+       return "";
+       }
+   } // method written by Dr.C
 
 /*
 	   public static byte[] returnBytes(BufferedImage image){
@@ -251,8 +260,9 @@ class ImgurSpider implements Runnable {
 			}
 
 			if(args.length!=0){for(int i = 0; i < args.length; i++){if(args[i].contains("http:"))g_article=args[i];}}
-			if (!g_article.contains("http")){g_article="http://"+g_article;}
-			
+			if (!args[args.length-1].contains("http")&&args[args.length-1].contains("imgur.com")){g_article="http://"+args[args.length-1];}
+			else if (!args[args.length-1].contains("http")&&!args[args.length-1].contains("imgur.com")){g_article="http://imgur.com/r/"+args[args.length-1];}
+
 			doc = htmlGrab();
 			if(g_prints)System.out.println(doc.title());
 			// Get directory name for saving locally
@@ -260,7 +270,7 @@ class ImgurSpider implements Runnable {
 			
 			// Create element objects which are used in html string parsing
 			content = doc.getElementById("content");
-			links = content.getElementsByTag("a");
+			//links = content.getElementsByTag("a");//TODO: delete this line if it works without it
 			
 			// Grab HTML DIV tag which holds image URL
 			String localReference = selectURL(doc);
@@ -274,7 +284,7 @@ class ImgurSpider implements Runnable {
 			
 			// Fill element with url's found in the body
 			links = content.getElementsByTag("a");
-			
+			linkName = content.getElementsByTag("p");
 			// feed these variables to the runScrape function which 
 			// downloads and saves images (.jpg,.gif,.png ...)
 			//runScrape(dirName, links, content, doc, tempdoc);
@@ -297,14 +307,15 @@ class ImgurSpider implements Runnable {
 	// A thread interrupt is triggered by the user when they
 	// close the Swing window.
 	public void run(){
-
 		// The image scraping continues while the thread has not been interrupted.
         while (!Thread.currentThread().isInterrupted()) {
         	
             try {
 				readArgs(args);
-			} catch (IOException | InterruptedException e1) {
-				e1.printStackTrace();
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
+				System.out.println(" failed reading arguments ");
+				printHelp();
 			}
 			
 			int repeatCntr=0;
@@ -312,9 +323,8 @@ class ImgurSpider implements Runnable {
 			String linkHref = "";
 			ArrayList<String> names = new ArrayList<>();
 
-			// Always try this next loop.
-			while(true){
-				//
+
+			while(true){	// Always try this next loop.
 				if(Thread.currentThread().isInterrupted()) {
 			        System.out.println("Thread interrupted\n Exiting...");
 			        break;
@@ -322,7 +332,7 @@ class ImgurSpider implements Runnable {
 
 				if(g_strtpg!=0){
 					while(doc==tempDoc){
-						try{
+						try{ // Initialize document object
                             doc = Jsoup.connect("https://imgur.com"+g_htmlChunk+"/page/"+g_strtpg+"/hit?scrolled").get();
                             // print url
                             System.out.println("https://imgur.com"+g_htmlChunk+"/page/"+g_strtpg+"/hit?scrolled");
@@ -338,8 +348,9 @@ class ImgurSpider implements Runnable {
 							e.printStackTrace();
 						}
 
-                        content = doc.body();
-                        links = content.getElementsByTag("a");
+                        content = doc.body();// Retrieve html out of the document, place into string.
+                        links = content.getElementsByTag("a");// Select all linked data.
+						linkName = content.getElementsByTag("p");
                         g_strtpg++;
                         repeatCntr++;
                         if(repeatCntr>5){break;}
@@ -347,19 +358,33 @@ class ImgurSpider implements Runnable {
 				}else{g_strtpg++;}
 
 				// 	Go through links we found in the HTML
+				int linkNameIndex= 0;
+				String imageName;
 				for (Element link : links) {
-					try{
+					//try{
 					 linkHref = link.attr("href");
-                     if(!names.contains(linkHref)&&!linkHref.contains("javascript")&&doc!=tempDoc){
+                     if(!names.contains(linkHref)&&!linkHref.contains("javascript")&&doc!=tempDoc){  // Exclude already selected and links containing "javascript" in their naming.
 						 names.add(linkHref);
-						 String imgName = linkHref.substring(linkHref.indexOf("m/")+2, linkHref.length());
-					      if(g_prints)System.out.println("Image name " + imgName);
-					      
+						 String utilityString = linkHref.substring(linkHref.indexOf("m/")+2, linkHref.length());
+
+						 imageName = linkName.get(linkNameIndex).toString().replaceAll("<p>|</p>", "")
+								 .replace("\\", "")
+								 .replace("/", "")
+								 .replace(":", "")
+								 .replace("*", "")
+								 .replace("?","")
+								 .replace("<","")
+								 .replace(">","")
+								 .replace("|","");// illegal save chars: \/:*?"<>|
+						 linkNameIndex++;
+
+					      if(g_prints)System.out.println("Image name " + imageName);
+
 					      // only run majority of code below if image has a name
-					      if(!imgName.equals("")){
+					      if(!utilityString.equals("")){
 					    	  
-					      imgName = imgName.substring(imgName.indexOf('/')+1, imgName.length() );
-					      imgName = imgName.substring(imgName.indexOf('/')+1, imgName.length());
+					      utilityString = utilityString.substring(utilityString.indexOf('/')+1, utilityString.length() );
+					      utilityString = utilityString.substring(utilityString.indexOf('/')+1, utilityString.length());
 
 					      String tmp=""; // tmp -> used to hold a to string value of the images Elements variable.
 					      int isGIF; //This case covers when the image is a .GIF
@@ -368,7 +393,9 @@ class ImgurSpider implements Runnable {
 						 Elements images=null;
 						 
 						 if(!g_quickMode){
-							 doc = Jsoup.connect("https://imgur.com"+linkHref).get();
+							 try {
+								 doc = Jsoup.connect("https://imgur.com" + linkHref).get();
+							 } catch (Exception e ) { System.out.println("Error making connection " + e); }
 							 System.out.println("https://imgur.com"+linkHref);
 							 String id=linkHref.substring(3);
 							 id=id.substring(id.indexOf("/")+1);
@@ -379,8 +406,8 @@ class ImgurSpider implements Runnable {
 								 images=body.getElementsByAttribute("video/webm");
 							 }
 						 }else{
-							 if(!imgName.equals("")){
-								 body = doc.getElementById(imgName);
+							 if(!utilityString.equals("")){
+								 body = doc.getElementById(utilityString);
 								 images = body.getElementsByTag("img");
 							 }
 						 }
@@ -397,22 +424,22 @@ class ImgurSpider implements Runnable {
 					      String dlLink = tmp;
 						 if(dlLink.length()==0){break;}
 						 if(isGIF==0){
-							 if(g_prints){	System.out.println("\nstep 1 " + dlLink);	}
+							 ////if(g_prints){	System.out.println("\nstep 1 " + dlLink);	}
 							 dlLink = dlLink.substring(dlLink.indexOf('"')+3, dlLink.length());
-							 if(g_prints){	System.out.println("\nstep 2 " +dlLink+"\n");	}
+							 //if(g_prints){	System.out.println("\nstep 2 " +dlLink+"\n");	}
 							 if(!g_quickMode){dlLink = "https://"+dlLink.substring(2, dlLink.indexOf('"'));}
 							 else {dlLink = "https://"+dlLink.substring(dlLink.indexOf('"')+3, dlLink.lastIndexOf('"'));
 							 dlLink = dlLink.substring(0, dlLink.indexOf("b."))+dlLink.substring(dlLink.indexOf("b.")+1, dlLink.length());}
 						 }else if(isGIF==1){
-							 if(g_prints){	System.out.println("\nstep 1 " + dlLink+"\n");	}
+							 //if(g_prints){	System.out.println("\nstep 1 " + dlLink+"\n");	}
 							 dlLink = dlLink.substring(dlLink.indexOf("//")+2,dlLink.length());
-							 if(g_prints){	System.out.println("\nstep 2 " +dlLink+"\n");	}
+							 ////if(g_prints){	System.out.println("\nstep 2 " +dlLink+"\n");	}
 							 dlLink = "https://"+dlLink.substring(2, dlLink.indexOf("',"));	 
 						 }
 						 // Create the image object
 						 Image image;
 						 //Image image = null;
-                        try{
+                        //try{
 								if(dlLink.contains("?1")){dlLink=dlLink.substring(0,dlLink.indexOf("?1"));}
 								 String ext="";
 								 if(!g_quickMode){
@@ -421,25 +448,45 @@ class ImgurSpider implements Runnable {
 								 }else{
 									 ext = dlLink.substring(dlLink.indexOf(".")+1, dlLink.length());
 									 ext = ext.substring(ext.indexOf(".")+1, ext.length());
-									 ext = ext.substring(ext.indexOf(imgName)+imgName.length()+1, ext.length());
+									 ext = ext.substring(ext.indexOf(utilityString)+utilityString.length()+1, ext.length());
 								 }
-								if(g_prints){	System.out.println("\nstep 3 " +dlLink+"\n");	}
-								if(g_gifs){
-									 byte[] b = new byte[1];
-									    URL url = new URL(dlLink);
-									    URLConnection urlConnection = url.openConnection();
-									    urlConnection.connect();
-									    DataInputStream di = new DataInputStream(urlConnection.getInputStream());
-									    FileOutputStream fo = new FileOutputStream(imgName+".gif");
-									    while (-1 != di.read(b, 0, 1))
-									    	{fo.write(b, 0, 1);}
-									    di.close();
-									    fo.close();
+								//if(g_prints){	System.out.println("\nstep 3 " +dlLink+"\n");	}
+								if(g_gifs) {
+
+									try {
+										byte[] b = new byte[1];
+										URL url = new URL(dlLink);
+										URLConnection urlConnection = url.openConnection();
+										urlConnection.connect();
+										DataInputStream di = new DataInputStream(urlConnection.getInputStream());
+										FileOutputStream fo = new FileOutputStream(imageName + ".gif");
+										while (-1 != di.read(b, 0, 1)) {
+											fo.write(b, 0, 1);
+										}
+										di.close();
+										fo.close();
+
+									} catch (MalformedURLException malURL) {
+										System.out.println("bad url " + malURL);
+									} catch (IOException ioEX) {
+										System.out.println("io ex, maybe file not found" + ioEX);
+									}
+
 								}else{
-									URL url = new URL(dlLink);
-									image = java.awt.Toolkit.getDefaultToolkit().createImage(url);
-									PixelGrabber pg = new PixelGrabber(image, 0, 0, -1, -1, true);
-									pg.grabPixels();
+
+									PixelGrabber pg = null;
+									try {
+										URL url = new URL(dlLink);
+										image = java.awt.Toolkit.getDefaultToolkit().createImage(url);
+										pg = new PixelGrabber(image, 0, 0, -1, -1, true);
+										pg.grabPixels();
+
+									} catch (MalformedURLException malURL) {
+										System.out.println("bad URL");
+									} catch (InterruptedException intEx) {
+										System.out.println(intEx);
+									}
+
 									int width = pg.getWidth(), height = pg.getHeight();
 									if(width<0||height<0){System.out.println("breaking because image width or height was invalid.");break;}
 									DataBuffer buffer = new DataBufferInt((int[]) pg.getPixels(), pg.getWidth() * pg.getHeight());
@@ -449,40 +496,47 @@ class ImgurSpider implements Runnable {
                                     int g_imgSv=0;// TODO: this could be if, g_saveTo is not null save it there. To get rid of this var
 									String g_saveTo="";// TODO: add a method to get this location, or prompt
                                     if(g_imgSv==0){
-                                        path = ImgurSpider.class.getClassLoader().getResource(".").getPath();
-                                    }
+//                                        path = ImgurSpider.class.getClassLoader().getResource(".").getPath(); // this is causing null exception
+										path = Paths.get("user.dir").toAbsolutePath().toString().replaceFirst("user.dir", "");
+									}
                                     else if(g_imgSv==1){
                                         path = g_saveTo;
                                     }
-							      if(g_prints)System.out.println("Image name " + imgName);
-							      if(!imgName.equals("")){
+									if(g_prints){System.out.println("saving to path: " + path);}
+							      //if(g_prints)System.out.println("Image name " + utilityString);
+							      if(!utilityString.equals("")){
 								      // If this is the first image create the path for the images
 								      if(linksFound==0) {
 								    	  new File(path+"//"+dirName+"//").mkdirs(); 
 								      }
 								      // test to see if a file exists
-								      File file = new File((path+"//"+dirName+"//")+imgName+"."+ext);
+								      File file = new File((path+"//"+dirName+"//")+utilityString+"."+ext);
 								      if (!file.exists())
 								      {
-								    	  ImageIO.write(bi, ext, new File((path+"//"+dirName+"//")+imgName+"."+ext));
+										  try {
+											  ImageIO.write(bi, ext, new File((path + "//" + dirName + "//") + imageName + "." + ext)); // utilityString -> imageName
+										  } catch (IOException ioEx){
+											  System.out.println("error writing image " + ioEx);
+										  }
+
 								    	  linksFound++;
 								    	  
 								      }
 								      if(g_prints)System.out.println("page " + g_strtpg + " pictures downloaded " + linksFound);
 							      }
 								}
-						  } catch (Exception e) {
-							  if(g_prints)System.out.println(e);
-						  }
+						  /*} catch (Exception e) {
+							  if(g_prints)System.out.println("Error saving image " + e);
+						  }*/
 					      }else{
 					    	  System.out.println("broken image");
 					    	//  System.out.println(doc.toString());
 					    	  System.out.println("https://imgur.com"+g_htmlChunk+"/page/"+g_strtpg+"/hit?scrolled");
 					      }//end if for empty image string
 					 }//end if (!names.contains(linkHref)&&!linkHref.contains("javascript")&&doc!=tempdoc)
-                } catch (Exception e) {
+               /* } catch (Exception e) {
 					  if(g_prints)System.out.println(e);
-					}
+					}*/
 				} // END FOR loop, (which looks at individual links on the page)
 
 				tempDoc=doc;
@@ -528,9 +582,9 @@ class test{
 		ImgurSpider spider;
 		spider = ImgurSpider.getInstance("Imgur Spider");
 
-		final GUI gui = new GUI(spider);	// Pass the spider object into the graphical user interface.
+//		final GUI gui = new GUI(spider);	// Pass the spider object into the graphical user interface.
 
-//		spider.start(args);  // non GUI version
+		spider.start(args);  // non GUI version
 	}
 	
 	
