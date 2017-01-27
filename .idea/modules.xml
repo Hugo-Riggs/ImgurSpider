@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/imgurParse/imgurParse.iml" filepath="$PROJECT_DIR$/imgurParse/imgurParse.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ImgurSpider.iml" filepath="$PROJECT_DIR$/ImgurSpider.iml" />
     </modules>
   </component>
 </project>
