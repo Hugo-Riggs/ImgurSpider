@@ -1,6 +1,7 @@
 *.class
 
 .mtj.tmp/
+.bfpmjsonstore
 
 /.idea
 /target
