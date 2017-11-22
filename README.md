@@ -1,12 +1,17 @@
-# ImgurSpider-Java-Jsoup
-This java program uses jsoup library for web crawling, specifically the imgur domain directories.
-Album and gallery support may be added, but for now it works with URL such as `http://imgur.com/r/cats`, `http://imgur.com/r/pics`.
+<hr>
+# Imgur Content Downloader 
+<hr>
+## Basic usage with Scala Build Tools:
+<hr>
+sbt console
 
-GUIImgurSpider.jar
+```scala
+import io.github.hugoriggs.imgurSpider._
+val spdDir = ImgurSpider(Seq("http://imgur.com/r/evilbuildings"))
+spdDir.setMaxDownloads(10).run
 
-![Alt text](/imgurSpider.png?raw=true "GuiImgurSpider.jar")
+val spdAlbm = ImgurSpider(Seq("https://imgur.com/a/uAFvn"))
+spdAlbm.run
 
-
-ImgurSpider.jar
-
-java -jar ImgurSpider.jar http://imgur.com/r/cats --path=/home/hugo/Downloads/ImgurSpider -v
+```
+<hr>
