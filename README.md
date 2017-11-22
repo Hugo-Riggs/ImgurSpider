@@ -1,8 +1,5 @@
-<hr>
 # Imgur Content Downloader 
-<hr>
 ## Basic usage with Scala Build Tools:
-<hr>
 sbt console
 
 ```scala
@@ -14,4 +11,3 @@ val spdAlbm = ImgurSpider(Seq("https://imgur.com/a/uAFvn"))
 spdAlbm.run
 
 ```
-<hr>
