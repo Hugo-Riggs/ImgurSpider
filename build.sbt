@@ -4,8 +4,8 @@ scalaVersion := "2.12.1"
 
 lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
-    "io.github.hugoriggs" % "fileprocs_2.12" % "1.0.1",
-    "org.jsoup" % "jsoup" % "1.8.3"
+    "org.jsoup" % "jsoup" % "1.8.3",
+    "io.github.hugoriggs" % "fileprocs_2.12" % "1.0.1" from "file://fileprocs_2.11.jar"
   )
 )
 

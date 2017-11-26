@@ -9,7 +9,7 @@
 		extra-sbtVersion="0.13"
 		conf="android-internal"
 		confs="compile, runtime, test, provided, optional, androidTest, android-internal, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom, scala-tool"
-		date="20171122004628"/>
+		date="20171125221943"/>
 	<dependencies>
 	</dependencies>
 </ivy-report>

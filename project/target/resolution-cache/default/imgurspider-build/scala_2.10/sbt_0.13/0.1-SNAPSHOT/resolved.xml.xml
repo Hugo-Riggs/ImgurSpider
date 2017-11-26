@@ -4,7 +4,7 @@
 		module="imgurspider-build"
 		revision="0.1-SNAPSHOT"
 		status="integration"
-		publication="20171122004628"
+		publication="20171125221943"
 		e:sbtVersion="0.13" e:scalaVersion="2.10"
 	>
 		<description>
