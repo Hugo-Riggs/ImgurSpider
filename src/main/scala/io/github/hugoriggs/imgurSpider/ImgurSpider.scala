@@ -10,8 +10,6 @@ import org.jsoup.Connection
 import util.control.Breaks._
 
 
-
-
 // Used to simplify connecting to URLs
 // and to set/get connection values
 object ConnectionManager {
@@ -54,12 +52,11 @@ object ImgurSpider {
   val domain = "https://imgur.com"
   val domain1 = "https://i.imgur.com"
   val directory = Directory(".")
-  val here = directory.path
   def apply(s: Seq[String]) = new ImgurSpider(s)
   def apply = println(helpString)
   def setDefaultDirectory(dir: String) = Database.setDefDir(dir)
-  Database.getDatabase(here)
-  setDefaultDirectory(here)
+  Database.setAssociatedAppName("ImgurSpider")
+  Database.getDatabase
 }
 
 // Spider class
@@ -73,8 +70,6 @@ class ImgurSpider(args: Seq[String]) {
   val directoryName = getDirectoryName(seedURL)
   val albumName = getAlbumName(seedURL)
 
-//  private val db = Database
-  private val location = Database.getVal("DefDir")
   private val tags = args.tail
 
   private var pageNumber = 0
@@ -231,20 +226,22 @@ class ImgurSpider(args: Seq[String]) {
 
   private def readyDirectory(dirName: String){
 
-    import ImgurSpider.{here, directory}
+    import ImgurSpider.directory
     val dirs = dirName.split("/")
     val len = dirs.length
-    var dir = directory
-    var path = directory.path //here
+//    var dir = directory
+    var dir = Directory(saveDir)
+//    var tmpPath = directory.getPath
+      var tmpPath = dir.getPath
     for(i <- 0 until len) {
       val successful: Boolean = dir.makeDirectory(dirs(i))
-      dir = Directory(path + dirs(i)) // CHANGE DIRECTORY
-      path = dir.path
+      dir = Directory(tmpPath + dirs(i)) // CHANGE DIRECTORY
+      tmpPath = dir.getPath
       if(successful) { println(s"made directory ${dirs(i)}") }
       else { println(s"Could not make directory ${dirs(i)}") }
     }
 
-    setSaveDirectory(path)
+      setSaveDirectory(dir.getPath)
   }
 
 //  RUN CRAWLER 

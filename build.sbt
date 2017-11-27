@@ -6,9 +6,7 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "org.jsoup" % "jsoup" % "1.8.3",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
-
     "org.json4s" % "json4s-native_2.12" % "3.5.2"
-//    "io.github.hugoriggs" % "fileprocs_2.12" % "1.0.1" 
   )
 )
 
