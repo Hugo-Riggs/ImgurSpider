@@ -1,8 +1,9 @@
-# Imgur Content Downloader 
-## Basic usage with Scala Build Tools:
-sbt console
+## Imgur Content Downloader 
+### Basic usage with Scala Build Tools:
 
 ```scala
+sbt console
+
 import io.github.hugoriggs.imgurSpider._
 val spdDir = ImgurSpider(Seq("http://imgur.com/r/evilbuildings"))
 spdDir.setMaxDownloads(10).run
