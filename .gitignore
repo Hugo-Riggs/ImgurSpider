@@ -1,5 +1,8 @@
 *.class
 
+*swp
+*~
+
 .mtj.tmp/
 .bfpmjsonstore
 
@@ -9,4 +12,6 @@
 /a
 /.git
 
+/target
 
+/project/target

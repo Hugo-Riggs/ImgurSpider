@@ -10,6 +10,11 @@ import org.jsoup.Connection
 import util.control.Breaks._
 
 
+object debug{
+  private val b: Boolean  = true
+  def apply(o: Object) = print(o + "\n")
+}
+
 // Used to simplify connecting to URLs
 // and to set/get connection values
 object ConnectionManager {
@@ -24,11 +29,11 @@ object ConnectionManager {
       while(true){
         con = Jsoup.connect(url) 
         if(con != null) {
-          print(s"imgurspider-connection: to ${url} successful\n")
+          debug(s"imgurspider-connection to:  ${url} successful\n")
           break 
         }
-        print("imgurspider-connection: failed to connect to " + url+ "\n")
-        print("Trying again...\n")
+        debug("imgurspider-connection: failed to connect to " + url+ "\n")
+        debug("Trying again...\n")
         Thread.sleep(timeoutMiliSeconds)
       } 
     }
@@ -74,7 +79,7 @@ class ImgurSpider(args: Seq[String]) {
 
   private var pageNumber = 0
   private var unnamedImageCounter = 0
-  private var maxPageNumber = 7 
+  private var maxPageNumber = 50
   private var downloadCount = 0
   private var maxDownloads = 200
   
@@ -209,6 +214,9 @@ class ImgurSpider(args: Seq[String]) {
       try{ // try it as a scroll page
         val ret =  scrollPage(makeHtmlDoc(getScrollPageURL))
         pageNumber += 1 // page number affects scrolled pages only
+        if(pageNumber-1 == maxPageNumber){
+          sys.exit(-1)
+        }
         ret
       } catch { case a: Any => // if that doesn't work, its an image page
         imgPage(makeHtmlDoc(seedURL)) 
@@ -247,18 +255,36 @@ class ImgurSpider(args: Seq[String]) {
 //  RUN CRAWLER 
   def run = {
 
+    var valueForWallpaperChanger: String = ""
+
     def subSext(url: String) = url.substring(url.length-4).toLowerCase
 
-    def download(name: String, url: String) = subSext(url) match {
+    def download(name: String, url: String): Int = {
 
-      case ".jpg" => Downloader.imageFromURL(url, name.dropRight(4), ".jpg", saveDir)
-      case "jpeg" => Downloader.imageFromURL(url, name.dropRight(4), ".jpg", saveDir)
-      case ".png" => Downloader.imageFromURL(url, name.dropRight(4), ".png", saveDir)
+      def removeThe_r(imagename: String): String = {
+        val regularExpression = "r\\.".r
+        regularExpression.replaceFirstIn(imagename, ".")
+      }
+
+      subSext(url) match {
+
+      case ".jpg" =>
+        valueForWallpaperChanger = saveDir + name
+        Downloader.imageFromURL(url, name.dropRight(4), ".jpg", saveDir)
+      case "jpeg" =>
+        valueForWallpaperChanger = saveDir + removeThe_r(name)
+        Downloader.imageFromURL(url, name.dropRight(4), ".jpg", saveDir)
+      case ".png" =>
+        valueForWallpaperChanger = saveDir + name
+        Downloader.imageFromURL(url, name.dropRight(4), ".png", saveDir)
       case ".mp4" => Downloader.mp4FromURL( url, name.dropRight(4), saveDir)
       case ".gif" => Downloader.gifFromURL( url, name.dropRight(4), saveDir)
       case "gifv" => Downloader.mp4FromURL( url, name.dropRight(4), saveDir)
-      case a: Any => println("ERROR MATCHING EXTENTION TO DOWNLOADER ext="+subSext(url))
+      case a: Any =>
+        println("ERROR MATCHING EXTENTION TO DOWNLOADER ext="+subSext(url))
+        -1
     }
+  }
 
     readyDirectory(directoryName.drop(1))
 
@@ -306,7 +332,8 @@ class ImgurSpider(args: Seq[String]) {
       }) } // inner break 
     } } // outer break
 
-
+    println("valueForWallpaperChanger " + valueForWallpaperChanger.replaceAll("/", "\\\\"))
+    WallpaperChanger.main(Array(valueForWallpaperChanger.replaceAll("/", "\\\\")))
   } // end
   
 
